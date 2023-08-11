@@ -1,0 +1,5 @@
+Setting,Value
+Fallout4DataFolder,C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data
+Fallout4VRDataFolder,C:\Program Files (x86)\Steam\steamapps\common\Fallout 4 VR\Data
+BackupDestination,C:\Program Files (x86)\Steam\steamapps\common\Fallout 4 VR
+BackupFilename,Fallout4VR_Data_Backup.zip
