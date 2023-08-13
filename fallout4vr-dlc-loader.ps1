@@ -11,7 +11,7 @@ function Update-Fallout4INI {
     }
 
     # Create a backup if it doesn't exist
-    $backupFilePath = [System.IO.Path]::ChangeExtension($iniFilePath, "bak")
+    $backupFilePath = [System.IO.Path]::ChangeExtension($iniFilePath, "ini.bak")
     if (-not (Test-Path -Path $backupFilePath)) {
         Copy-Item -Path $iniFilePath -Destination $backupFilePath
         Write-Host "Backup created: $backupFilePath"
@@ -23,10 +23,20 @@ function Update-Fallout4INI {
     # Read the existing contents of the INI file
     $iniContents = Get-Content -Path $iniFilePath
 
+    # Check if the configuration line already exists
+    if ($iniContents -match "^\[Archive\][\s\S]*$configLine") {
+        Write-Host "Configuration line already exists in Fallout4.ini"
+        # return
+    }
+    Else{
+    # Add the configuration line under the [Archive] section
+    $iniContents = $iniContents -replace "(\[Archive\])", "`$1`r`n$configLine"
+    }
+        
     # Update the line with "sResourceDataDirsFinal="
     $updatedContents = foreach ($line in $iniContents) {
         if ($line -match "^\s*sResourceDataDirsFinal=") {
-            $line -replace "=.*", "=$configLine"
+            $line -replace "=.*", "="
         } else {
             $line
         }
@@ -55,6 +65,7 @@ function Copy-DLCList {
     }
 
     # Copy the DLCList.txt from Fallout 4 to Fallout 4 VR
+    Write-host "Copying DLClist.txt from Fallout 4 Appdata folder."
     Copy-Item -Path $fallout4DLCListPath -Destination $fallout4VRDLCListPath -Force
 
     Write-Host "DLCList.txt copied from Fallout 4 to Fallout 4 VR."
@@ -63,8 +74,10 @@ function Copy-DLCList {
 # <--- Script Start --->
 
 # Read settings from the CSV file
-$mypath = $MyInvocation.MyCommand.Path
+# $mypath = $MyInvocation.MyCommand.Path
+$mypath = $PSScriptRoot
 $Settings_File = $mypath + "\settings.csv"
+Write-host "Loading: $Settings_File"
 $settings = Import-Csv -Path $Settings_File -Header Setting,Value
 
 # Get specific settings
@@ -99,6 +112,7 @@ if (Test-Path $backupFilePath) {
     Write-Host "Backup file already exists: $backupFilePath"
 } else {
     # Create a backup zip file
+    Write-host "Starting Data Folder Backup."
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::CreateFromDirectory($fallout4VRDataFolder, $backupFilePath)
     Write-Host "Backup created: $backupFilePath"
@@ -109,6 +123,7 @@ Copy-DLCList
 
 if (Test-Path $backupFilePath) {
     # Copy Fallout 4 data to Fallout 4 VR data
+    Write-host "Starting DLC file copy."
     $filesToCopy = Get-ChildItem -Path $fallout4DataFolder -File -Recurse
     $filesToCopy | ForEach-Object {
         $destinationPath = Join-Path -Path $fallout4VRDataFolder -ChildPath $_.FullName.Substring($fallout4DataFolder.Length)
@@ -120,6 +135,7 @@ if (Test-Path $backupFilePath) {
         }
     }
     # Call the function with the path to your Fallout4.ini file
+    Write-host "Updating Fallout4VR INI file."
     Update-Fallout4INI -iniFilePath $INI_Path
 
     Write-Host "Fallout 4 Data copied to Fallout 4 VR Data."
